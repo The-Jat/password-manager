@@ -1,13 +1,25 @@
 <!DOCTYPE html>
 <html>
-  <body>
-    <h1>Password Manager</h1>
 
-    <input id="password" type="password" placeholder="Master Password" />
-    <button id="setup">Create Vault</button>
+<body>
+  <h2>Password Manager</h2>
 
-    <pre id="out"></pre>
+  <input id="password" type="password" placeholder="Master password" />
+  <button id="setup">Create Vault</button>
+  <button id="unlock">Unlock Vault</button>
 
-    <script src="popup.js"></script>
-  </body>
+  <hr />
+
+  <input id="site" placeholder="Website" />
+  <input id="username" placeholder="Username" />
+  <input id="entryPassword" placeholder="Password" />
+
+  <button id="add">Add Entry</button>
+
+  <pre id="out"></pre>
+
+
+  <script src="popup.js"></script>
+</body>
+
 </html>

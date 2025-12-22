@@ -1,27 +1,35 @@
 import { deriveKey } from "../crypto/kdf";
-import { randomBytes } from "../crypto/random";
 import { encrypt } from "../crypto/encrypt";
+import { decrypt } from "../crypto/decrypt";
+import { randomBytes } from "../crypto/random";
 
-const btn = document.getElementById("setup")!;
-const out = document.getElementById("out")!;
-const input = document.getElementById("password") as HTMLInputElement;
+const passwordInput = document.getElementById("password") as HTMLInputElement;
+const out = document.getElementById("out") as HTMLElement;
 
-console.log("POPUP SCRIPT LOADED");
+const setupBtn = document.getElementById("setup") as HTMLButtonElement;
+const unlockBtn = document.getElementById("unlock") as HTMLButtonElement;
+const addBtn = document.getElementById("add") as HTMLButtonElement;
 
-btn.addEventListener("click", async () => {
-    console.log("SETUP CLICKED");
-  const password = input.value;
+const siteInput = document.getElementById("site") as HTMLInputElement;
+const userInput = document.getElementById("username") as HTMLInputElement;
+const passInput = document.getElementById("entryPassword") as HTMLInputElement;
+
+let vault: { entries: any[] } | null = null;
+let vaultKey: CryptoKey | null = null;
+
+/* CREATE VAULT */
+setupBtn.addEventListener("click", async () => {
+  const password = passwordInput.value;
   if (!password) return;
 
   const salt = randomBytes(16);
   const key = await deriveKey(password, salt, ["encrypt", "decrypt"]);
 
-  const emptyVault = new TextEncoder().encode(
-    JSON.stringify({ entries: [] })
-  );
+  const emptyVault = { entries: [] };
+  const encoded = new TextEncoder().encode(JSON.stringify(emptyVault));
 
   const iv = randomBytes(12);
-  const encrypted = await encrypt(key, emptyVault, iv);
+  const encrypted = await encrypt(key, encoded, iv);
 
   chrome.storage.local.set({
     vault: {
@@ -31,5 +39,69 @@ btn.addEventListener("click", async () => {
     }
   });
 
-  out.textContent = "Vault created securely 🔐";
+  out.textContent = "Vault created 🔐";
+});
+
+/* UNLOCK VAULT */
+unlockBtn.addEventListener("click", async () => {
+  const password = passwordInput.value;
+  if (!password) return;
+
+  chrome.storage.local.get("vault", async (res) => {
+    try {
+      const v = res.vault;
+
+      const key = await deriveKey(
+        password,
+        new Uint8Array(v.salt),
+        ["encrypt", "decrypt"]
+      );
+
+      const decrypted = await decrypt(
+        key,
+        new Uint8Array(v.data),
+        new Uint8Array(v.iv)
+      );
+
+      vault = JSON.parse(new TextDecoder().decode(decrypted));
+      vaultKey = key;
+
+      out.textContent = "Vault unlocked 🔓";
+      console.log(vault);
+    } catch {
+      out.textContent = "Wrong password ❌";
+    }
+  });
+});
+
+/* ADD ENTRY */
+addBtn.addEventListener("click", async () => {
+  if (!vault || !vaultKey) {
+    out.textContent = "Unlock vault first";
+    return;
+  }
+
+  vault.entries.push({
+    id: crypto.randomUUID(),
+    site: siteInput.value,
+    username: userInput.value,
+    password: passInput.value,
+    createdAt: Date.now()
+  });
+
+  const encoded = new TextEncoder().encode(JSON.stringify(vault));
+  const iv = randomBytes(12);
+  const encrypted = await encrypt(vaultKey, encoded, iv);
+
+  chrome.storage.local.get("vault", (res) => {
+    chrome.storage.local.set({
+      vault: {
+        salt: res.vault.salt,
+        iv: Array.from(iv),
+        data: Array.from(new Uint8Array(encrypted))
+      }
+    });
+  });
+
+  out.textContent = "Entry added 🔐";
 });
