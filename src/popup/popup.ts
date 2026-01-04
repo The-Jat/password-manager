@@ -117,16 +117,43 @@ function renderEntries() {
 
   entriesDiv.innerHTML = "";
 
-  if (vault.entries.length == 0) {
+  if (vault.entries.length === 0) {
     entriesDiv.textContent = "No entries yet";
     return;
   }
 
   for (const entry of vault.entries) {
     const row = document.createElement("div");
+    row.style.display = "flex";
+    row.style.justifyContent = "space-between";
     row.style.marginBottom = "6px";
 
-    row.textContent = `${entry.site} → ${entry.username}`;
+    const label = document.createElement("span");
+    label.textContent = `${entry.site} → ${entry.username}`;
+
+    const copyBtn = document.createElement("button");
+    copyBtn.textContent = "Copy";
+
+    copyBtn.addEventListener("click", () => {
+      copyPassword(entry.password);
+    });
+
+    row.appendChild(label);
+    row.appendChild(copyBtn);
     entriesDiv.appendChild(row);
+  }
+}
+
+async function copyPassword(password: string) {
+  try {
+    await navigator.clipboard.writeText(password);
+    out.textContent = "Password copied 📋";
+
+    setTimeout(() => {
+      navigator.clipboard.writeText("");
+      out.textContent = "Clipboard cleared 🔒";
+    }, 30_000);
+  } catch {
+    out.textContent = "Clipboard access denied ❌";
   }
 }
