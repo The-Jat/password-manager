@@ -14,6 +14,8 @@ const siteInput = document.getElementById("site") as HTMLInputElement;
 const userInput = document.getElementById("username") as HTMLInputElement;
 const passInput = document.getElementById("entryPassword") as HTMLInputElement;
 
+const entriesDiv = document.getElementById("entries") as HTMLElement;
+
 let vault: { entries: any[] } | null = null;
 let vaultKey: CryptoKey | null = null;
 
@@ -67,6 +69,10 @@ unlockBtn.addEventListener("click", async () => {
       vaultKey = key;
 
       out.textContent = "Vault unlocked 🔓";
+
+      // list entries
+      renderEntries();
+
       console.log(vault);
     } catch {
       out.textContent = "Wrong password ❌";
@@ -105,3 +111,22 @@ addBtn.addEventListener("click", async () => {
 
   out.textContent = "Entry added 🔐";
 });
+
+function renderEntries() {
+  if (!vault) return;
+
+  entriesDiv.innerHTML = "";
+
+  if (vault.entries.length == 0) {
+    entriesDiv.textContent = "No entries yet";
+    return;
+  }
+
+  for (const entry of vault.entries) {
+    const row = document.createElement("div");
+    row.style.marginBottom = "6px";
+
+    row.textContent = `${entry.site} → ${entry.username}`;
+    entriesDiv.appendChild(row);
+  }
+}
