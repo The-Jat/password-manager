@@ -1,27 +1,56 @@
 <!DOCTYPE html>
 <html>
-
+<head>
+  <meta charset="UTF-8" />
+  <title>Password Manager</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      width: 320px;
+      padding: 10px;
+    }
+    input, button {
+      width: 100%;
+      margin: 4px 0;
+      padding: 6px;
+    }
+    .entry {
+      border: 1px solid #ddd;
+      padding: 6px;
+      margin-top: 6px;
+    }
+  </style>
+</head>
 <body>
-  <h2>Password Manager</h2>
 
-  <input id="password" type="password" placeholder="Master password" />
-  <button id="setup">Create Vault</button>
-  <button id="unlock">Unlock Vault</button>
+<h3>Password Manager</h3>
 
-  <hr />
+<input id="email" placeholder="Email" />
+<input id="loginPassword" type="password" placeholder="Login Password" />
+<button id="login">Login</button>
 
-  <input id="site" placeholder="Website" />
-  <input id="username" placeholder="Username" />
-  <input id="entryPassword" placeholder="Password" />
+<hr/>
 
-  <button id="add">Add Entry</button>
+<input id="password" type="password" placeholder="Master Password" />
 
-  <pre id="out"></pre>
+<button id="setup">Create Vault</button>
+<button id="unlock">Unlock Vault</button>
 
-  <div id="entries"></div>
+<hr />
+
+<input id="site" placeholder="Site" />
+<input id="username" placeholder="Username" />
+<input id="entryPassword" placeholder="Password" />
+
+<button id="add">Add Entry</button>
+
+<button id="sync">Sync Vault</button>
 
 
-  <script src="popup.js"></script>
+<div id="entries"></div>
+
+<p id="out"></p>
+
+<script src="popup.js"></script>
 </body>
-
 </html>
