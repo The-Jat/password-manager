@@ -113,10 +113,10 @@ setupBtn.addEventListener("click", async () => {
   const encrypted = await encrypt(key, encoded, iv);
 
   const payload = {
-    salt: Array.from(salt),
-    iv: Array.from(iv),
-    data: Array.from(new Uint8Array(encrypted))
-  };
+  salt: toBase64(salt),
+  iv: toBase64(iv),
+  data: toBase64(new Uint8Array(encrypted))
+};
 
   chrome.storage.local.set({ vault: payload });
   await syncVaultToServer(payload);
@@ -134,30 +134,29 @@ unlockBtn.addEventListener("click", async () => {
     try {
       const v = res.vault;
 
+      const salt = base64ToBytes(v.salt);
+      const iv = base64ToBytes(v.iv);
+      const data = base64ToBytes(v.data);
+
       const key = await deriveKey(
         password,
-        new Uint8Array(v.salt),
+        salt,
         ["encrypt", "decrypt"]
       );
 
-      const decrypted = await decrypt(
-        key,
-        new Uint8Array(v.data),
-        new Uint8Array(v.iv)
-      );
+      const decrypted = await decrypt(key, data, iv);
 
       vault = JSON.parse(new TextDecoder().decode(decrypted));
       vaultKey = key;
 
       renderEntries();
       out.textContent = "Vault unlocked 🔓";
-    } catch {
+    } catch (e) {
+      console.error(e);
       out.textContent = "Wrong master password ❌";
     }
   });
 });
-
-/* ---------------- ADD ENTRY ---------------- */
 
 addBtn.addEventListener("click", async () => {
   if (!vault || !vaultKey) {
@@ -179,9 +178,9 @@ addBtn.addEventListener("click", async () => {
 
   chrome.storage.local.get("vault", async (res) => {
     const payload = {
-      salt: res.vault.salt,
-      iv: Array.from(iv),
-      data: Array.from(new Uint8Array(encrypted))
+      salt: res.vault.salt, // already base64
+      iv: bytesToBase64(iv),
+      data: bytesToBase64(new Uint8Array(encrypted))
     };
 
     chrome.storage.local.set({ vault: payload });
@@ -203,35 +202,6 @@ async function fetchVaultFromServer() {
       Authorization: `Bearer ${token}`
     }
   });
-
-  // if (!res.ok) {
-  //   console.log("Failed to fetch vault from server", res.status);
-  //   return;
-  // }
-
-  // let serverVault = null;
-  // try {
-  //   serverVault = await res.json();
-  // } catch (e) {
-  //   console.error("Failed to parse vault JSON", e);
-  //   return;
-  // }
-
-  // if (!serverVault) {
-  //   console.log("Server returned empty vault");
-  //   return;
-  // }
-
-  // // If using SQLite, data might be strings
-  // const vaultPayload = {
-  //   salt: JSON.parse(serverVault.salt),
-  //   iv: JSON.parse(serverVault.iv),
-  //   data: JSON.parse(serverVault.data)
-  // };
-
-  // await new Promise<void>((resolve) =>
-  //   chrome.storage.local.set({ vault: vaultPayload }, () => resolve())
-  // );
 
   if (!res.ok) {
     console.error("Failed to fetch vault", res.status);
@@ -265,3 +235,15 @@ syncBtn.addEventListener("click", async () => {
     out.textContent = "Vault synced to server ☁️";
   });
 });
+
+function toBase64(arr) {
+  return btoa(String.fromCharCode(...arr));
+}
+
+function base64ToBytes(base64) {
+  return Uint8Array.from(atob(base64), c => c.charCodeAt(0));
+}
+
+function bytesToBase64(bytes) {
+  return btoa(String.fromCharCode(...bytes));
+}
